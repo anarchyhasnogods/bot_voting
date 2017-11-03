@@ -78,49 +78,57 @@ class Main():
         post_list = mysqlhelper.get_posts(self.bot_number)
         # Iterates through each post
         for i in post_list:
-            #print("here")
-            #print(i)
+
             vote_total = i[2][1]+i[2][0]+i[2][2]
-            #return
 
 
             #Checks if the percentage (between 0 and 1) of upvotes is bigger than the upvote threshold
 
             vote_percentage = (i[2][0]/float(vote_total))
 
-            print(vote_percentage, 'vote_percentage-')
-            print(self.upvote_threashold)
+
             if vote_percentage >= self.upvote_threashold:
-                print("first if", self.plagiarism_threshold)
 
                 # This next one checks if more than a set amount of votes say the post has been plagiarism (as a percentage)
-                if i[2][2] > self.plagiarism_threshold:
-                    self.vote(i[0], self.vote_weight(vote_percentage, i[6][0], i[6][1]), i[1])
-
-
+                if i[2][2] < self.plagiarism_threshold or i[2][2] == 0:
+                    vote_weight = self.vote_weight(vote_percentage, i[6][0], i[6][1])
+                    self.vote(i[0], vote_weight[0], i[1])
+                    mysqlhelper.vote_information([vote_weight[1], i[0], vote_percentage, i[5]])
+                else:
+                    mysqlhelper.post_plag_flag([vote_weight[1], i[0], vote_percentage, i[5]])
 
 
     def vote_weight(self, upvote_percent, upvote_tokens_temp, upvote_tokens_perm):
-        voting_power = mysqlhelper.get_voting_power()
-        averages = mysqlhelper.get_averages(self.time_period)
-
+        voting_power = mysqlhelper.get_voting_power(self.bot_number)
+        averages = mysqlhelper.get_averages(self.time_period, self.bot_number)
         # Each of the two types of tokens are taken into account. Their affect is calculated based on the outside varaibles
         token_power =((self.token_multiplyer[3]* upvote_tokens_temp **self.token_exponent[3]))+\
                    ((self.token_multiplyer[0]* upvote_tokens_perm **self.token_exponent[0])) + 1
 
-        # total posts and power used during that time, for base votes (not tokens)
+        # total posts and power used during that time, for base votes (not tokens). -
+        # is total percent that should be used during the time period divided by the amount of posts during the period
+
         # upvote percent on this post devided by the average upvote percent and controlled by our exponential
         # if below threshold it is dev by 1, if below threshold it is the square root of 1 + by how many times the threshold is bigger
-        base_upvote = ((averages[3]-averages[2]) / averages[1])*\
+        base_upvote = (averages[3]/averages[1])*\
                       (upvote_percent/averages[0])** self.upvote_exponential \
-                      / math.sqrt(math.floor(self.voting_power_threshold/voting_power + 1))
+                      / math.sqrt(math.floor(self.voting_power_threshold/voting_power + 1)) * (1-(averages[2]))
+
+        print(base_upvote)
+        print(averages[3]/averages[1])
+        full_vote = base_upvote * token_power
+        if full_vote > 100:
+            full_vote = 100
+
+        percent_token = token_power / (base_upvote + token_power)
 
 
-        return base_upvote * token_power
+        return full_vote, percent_token
 
 
 
     def vote(self, post_id, weight, author):
+
         # This function tries to vote on a post with all nodes until it gets one that works
         # After the vote it will sleep for 6 seconds, and then check to see if it voted on the post
         # If the bot did not vote on the post, it will try again by calling the function again.
@@ -129,7 +137,13 @@ class Main():
         # If that works it tries to vote with the keys of our main delagated account.
         # If that works it stops the loop and goes on
         # If it does not it uses node_down(node) to alert us that a node is down and how many are left and tries again with the next
+        percent_tokens = weight[1]
+        weight = weight[0]
+
+
+
         print("voted")
+
         return
 
         for i in self.nodes:

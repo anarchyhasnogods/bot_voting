@@ -45,9 +45,7 @@ def run_bot(main_object):
                 return i
 
             else:
-                print(i)
                 if i == 1:  # vote
-                    print("checked posts")
                     main_object.check_posts()
 
                 if i == 2:  # update variables
