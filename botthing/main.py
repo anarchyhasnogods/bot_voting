@@ -93,9 +93,9 @@ class Main():
                 if i[2][2] < self.plagiarism_threshold or i[2][2] == 0:
                     vote_weight = self.vote_weight(vote_percentage, i[6][0], i[6][1])
                     self.vote(i[0], vote_weight[0], i[1])
-                    mysqlhelper.vote_information([vote_weight[1], i[0], vote_percentage, i[5]])
+                    mysqlhelper.vote_information([vote_weight[1], i[0], vote_percentage, i])
                 else:
-                    mysqlhelper.post_plag_flag([vote_weight[1], i[0], vote_percentage, i[5]])
+                    mysqlhelper.post_plag_flag([vote_weight[1], i[0], vote_percentage, i])
 
 
     def vote_weight(self, upvote_percent, upvote_tokens_temp, upvote_tokens_perm):
@@ -137,24 +137,31 @@ class Main():
         # If that works it tries to vote with the keys of our main delagated account.
         # If that works it stops the loop and goes on
         # If it does not it uses node_down(node) to alert us that a node is down and how many are left and tries again with the next
-        percent_tokens = weight[1]
-        weight = weight[0]
+
 
 
 
         print("voted")
 
-        return
 
         for i in self.nodes:
             try:
-                node = create_connection(i)
-                s=Steem(wif=self.posting_key,node=node)
-                s.vote(post_id, weight, self.account_name)
+                search_id = post_id.split("/", 1)
+
+                node_connection = create_connection(i)
+                print(1)
+                s=Steem(node=node_connection,key=self.posting_key)
+                print(2)
+                print(search_id[1])
+                s.vote(search_id[1], weight, self.account_name)
+                node_connection = None
                 break
-            except:
+            except Exception as e:
+                print(e)
                 print("node: ", i," did not work")
                 self.node_down(i)
+
+        return
 
 
 

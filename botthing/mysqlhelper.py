@@ -26,7 +26,7 @@ def get_averages(time_period, bot_number):
 def get_vars(bot_number):
 
 
-    return [0, .50 , [1,1,1,1,1], [100,100,100], [1,1,1,1,1], ['node'], 6, 80, 1, 600]
+    return [0, .50 , [1,1,1,1,1], [100,100,100], [1,1,1,1,1], ['wss://steemd-int.steemit.com'], 6, 80, 1, 600]
 
 def get_voting_power_used(time_period, bot_numbr):
 
