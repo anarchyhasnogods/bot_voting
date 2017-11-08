@@ -2,7 +2,7 @@
 
 import main
 import time
-
+import mysqlhelper
 def start():
     main_1 = main.Main(0)
 
@@ -61,6 +61,8 @@ def run_bot(main_object):
     except Exception as e:
 
         print(e, "run function")
+        mysqlhelper.log_error(main_object.bot_number, e)
+
     return -1
 
 

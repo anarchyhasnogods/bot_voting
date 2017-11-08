@@ -27,10 +27,9 @@ class Main():
         self.bot_number = bot_number
 
 
-        self.failure_average = [[0, self.start_time, 0], [0,time.time(), 0]]
         # First is total, second is time it started, third is average
         # The second is the average time between the last 5, in blocks of 5
-
+        self.broken_nodes = []
         self.check_vars()
 
 
@@ -110,8 +109,8 @@ class Main():
 
         # upvote percent on this post devided by the average upvote percent and controlled by our exponential
         # if below threshold it is dev by 1, if below threshold it is the square root of 1 + by how many times the threshold is bigger
-        base_upvote = (averages[3]/averages[1])*\
-                      (upvote_percent/averages[0])** self.upvote_exponential \
+        base_upvote = (averages[3]/(averages[1]+1))*\
+                      (upvote_percent/(averages[0]+1))** self.upvote_exponential \
                       / math.sqrt(math.floor(self.voting_power_threshold/voting_power + 1)) * (1-(averages[2]))
 
         print(base_upvote)
@@ -137,46 +136,48 @@ class Main():
         # If that works it tries to vote with the keys of our main delagated account.
         # If that works it stops the loop and goes on
         # If it does not it uses node_down(node) to alert us that a node is down and how many are left and tries again with the next
+        if len(self.nodes) == 0:
+            self.nodes = self.broken_nodes
 
 
+        for i in range(len(self.nodes)):
+           # try:
+                #search_id = post_id.split("/", 4)
 
-
-        print("voted")
-
-
-        for i in self.nodes:
+            # Tries to make a connection to the steem node and make a vote with the predefined weight and post id.
+           # If it does not work either the node is down or the key does not work. It automatically treats it as if the node is down.
+            voted = False
             try:
-                search_id = post_id.split("/", 1)
-
-                node_connection = create_connection(i)
-                print(1)
-                s=Steem(node=node_connection,key=self.posting_key)
-                print(2)
-                print(search_id[1])
-                s.vote(search_id[1], weight, self.account_name)
+                node_connection = create_connection(self.nodes[i])
+                s=Steem(node=node_connection, keys=self.posting_key)
+                s.vote(post_id, weight, account=self.account_name)
                 node_connection = None
+                voted = True
                 break
             except Exception as e:
                 print(e)
-                print("node: ", i," did not work")
+                mysqlhelper.log_error(self.bot_number, "node "+ str(self.nodes[i])+ " is down")
+
+                print("node: ", self.nodes[i]," did not work")
                 self.node_down(i)
 
-        return
-
-
-
-
-        time.sleep(6)
-        votes = s.get_active_votes(author, post_id)
         has_voted = False
-        for i in votes:
-            if self.account_name == i["voter"]:
-                has_voted = True
-                break
+        if voted:
+            try:
+                time.sleep(6)
+                votes = s.get_active_votes(author, post_id)
 
-        if not has_voted:
-            self.vote(post_id, weight, author)
-            self.failure("Failed to vote on  ", post_id,"  ", author)
+                for i in votes:
+                    if self.account_name == i["voter"]:
+                        has_voted = True
+                        break
+            except Exception as e:
+                print(e)
+                mysqlhelper.log_error(self.bot_number, e)
+
+            if not has_voted:
+                self.vote(post_id, weight, author)
+                print("Failed to vote on  ", post_id,"  ", author)
         # This checks the post and sees if we are one of the voters. If we are not it tries to vote again
 
 
@@ -184,24 +185,17 @@ class Main():
     def node_down(self,node):
         # This function alerts us that a node is down and how many are down
         #  through our accounts on the website
-        pass
+        mysqlhelper.log_error(self.bot_number, self.nodes[node])
+        self.broken_nodes.append(self.nodes.pop(node))
 
 
-    def failure(self, statement):
-        # This function alerts us that the bot failed to do something, like vote on a post.
-        # This will be shown to our accounts to we can troubleshoot, it also sleeps if needed to keep processing time low
-        self.failure_average[0][0]+=1
-        self.failure_average[0][3] = self.failure_average[0][2]/(time.time()-self.failure_average[0][1])
 
-        if self.failure_average[1][0] != 5:
 
-            self.failure_average[1][0] += 1
-            self.failure_average[1][3] = self.failure_average[1][0]/(time.time()-self.failure_average[1][1])
 
-        else:
-            self.failure_average[1] = [0, time.time(), 0]
 
-        sleep_time = math.floor(self.failure_average[0][2]/self.failure_average[1][2]) * 10
 
-        time.sleep(sleep_time)
 
+main = Main(0)
+
+
+main.check_posts()

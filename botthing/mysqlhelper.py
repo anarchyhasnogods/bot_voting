@@ -3,7 +3,7 @@
 def get_posts(bot_number):
     print("getting posts")
 
-    return [["https://steemit.com/science/@anarchyhasnogods/the-impact-of-melting-glaciers#@anarchyhasnogods/re-anarchyhasnogods-the-impact-of-melting-glaciers-20171002t222800349z"
+    return [["@anarchyhasnogods/protesters-facing-70-years-in-jail-for-being-near-a-riot"
 
         , "anarchyhasnogods", [100, 50, 0], [0, 0], [0, 0], ["anarchyhasnogods", "othername"],
             [10, 10]]]
@@ -56,3 +56,7 @@ def vote_information(post_input):
     pass
 def post_plag_flag(post_input):
     pass
+
+
+def log_error(bot_number, error):
+    print(bot_number,error)
