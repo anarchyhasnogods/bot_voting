@@ -45,16 +45,21 @@ def run_bot(main_object):
                 return i
 
             else:
-                if i == 1:  # vote
-                    main_object.check_posts()
+                try:
 
-                if i == 2:  # update variables
+                    if i == 1:  # vote
+
+                        main_object.check_posts()
+
+                    if i == 2:  # update variables
 
 
-                    main_object.check_vars()
+                        main_object.check_vars()
 
-                if i == 3:  # Restart bot
-                    return [1, main_object.bot_number]
+                    if i == 3:  # Restart bot
+                        return [1, main_object.bot_number]
+                except Exception as e:
+                    mysqlhelper.log_error(main_object.bot_number, e)
 
 
 

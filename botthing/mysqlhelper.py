@@ -20,7 +20,7 @@ def get_averages(time_period, bot_number):
     # What percent of total power went towards upvote tokens. Is a decimal.
     # What amount of power should have been used total during that time. Expressed as percent of one upvotes -
     # 1000 is 10 full votes, which would be 24 hours.
-    return [80, 10, 0.0005, 1000]
+    return [0, 10, 0.0005, 1000]
     pass
 
 def get_vars(bot_number):

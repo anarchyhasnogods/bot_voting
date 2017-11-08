@@ -109,8 +109,11 @@ class Main():
 
         # upvote percent on this post devided by the average upvote percent and controlled by our exponential
         # if below threshold it is dev by 1, if below threshold it is the square root of 1 + by how many times the threshold is bigger
-        base_upvote = (averages[3]/(averages[1]+1))*\
-                      (upvote_percent/(averages[0]+1))** self.upvote_exponential \
+        if averages[1] ==0 or averages[0] == 0:
+            mysqlhelper.log_error(self.bot_number, "one of the averages is 0:" + str(averages[0]) + "  "+ str(averages[1]))
+            return
+        base_upvote = (averages[3]/(averages[1]))*\
+                      (upvote_percent/(averages[0]))** self.upvote_exponential \
                       / math.sqrt(math.floor(self.voting_power_threshold/voting_power + 1)) * (1-(averages[2]))
 
         print(base_upvote)
@@ -195,7 +198,7 @@ class Main():
 
 
 
-main = Main(0)
+#main = Main(0)
 
 
-main.check_posts()
+#main.check_posts()
