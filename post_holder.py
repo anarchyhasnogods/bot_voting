@@ -20,21 +20,17 @@ class Post_holder:
         self.sending_account = sending_account
         self.key = key
         self.memo_account = memo_account
+        self.votes_finished = False
 
     def add_post(self, post_link, submission_author, post_author):
+        print(post_link, submission_author, post_author)
         # post_list = [[postname, submission author, vote list, advertisement_total]]
 
-        ad_tokens = 0
+        # gets account info for reward calculation
+        account_info_post = json.dumps(interpret.get_account_info(post_author)[2]) # Gets info on post author
+        ad_tokens = int(account_info_post["ad-token-perm"]) + int(account_info_post["ad-token-temp"])
 
-        account_info_post = interpret.get_account_info(post_author) # Gets info on post author
 
-        for i in range(0, int(len(account_info_post[2])), 2): # Finds and adds together all kinds of ad tokens
-        
-            if account_info_post[2][i] == "ad-token-perm":
-                ad_tokens += int(account_info_post[2][i+1])
-                print(int(account_info_post[2][i+1]))
-            elif account_info_post[2][i] == "ad-token-temp":
-                ad_tokens += int(account_info_post[2][i+1])
         # uses add tokens to calculate visibility within system, and save information needed for later.
         self.post_list.append([post_link, submission_author, [], 10 + int(math.sqrt(ad_tokens)), time.time()])
 
@@ -106,15 +102,13 @@ class Post_holder:
                 interpret.update_account(ii[0], self.sending_account,self.memo_account ["vote", str(ii[1]) + "|"
                                                                                        + str(memo_pos)], self.key)
 
+            self.votes_finished = True
 
 
 
 
 
-
-
-
-interpret.update_account("name","anarchyhasnogods","space-pictures",["add1","add2"], "5JFZVDDCmDSkYJKjsdVUzufxhYoNFR2KUSkox4sbVfutQp6DsSK")
+#interpret.update_account("name","anarchyhasnogods","space-pictures",["add1","add2"])
 #post_thing = Post_holder(100,1000)
 #for i in range(10):
  #   post_thing.add_post(str(i),str(i),"x")
@@ -123,8 +117,22 @@ while True:
     #print(1,post_thing.get_random())
     #print(2,post_thing.random_posts)
     break
+print("here")
+spam_str = ""
+while len(spam_str) < 150:
+    spam_str += "test"
+print(spam_str)
+for i in range(10):
+    while True:
+        try:
+            interpret.update_account(str(i),"anarchyhasnogods","space-pictures",[["vote",spam_str]],"5KQg9ZiMdNWpiBrrUdhdhmsox4d4BkwPBd1A8RjMXixzFsASBtu")
+            break
+        except:
+            pass
 
 
+
+    #print(interpret.start_account(str(i),"5KQg9ZiMdNWpiBrrUdhdhmsox4d4BkwPBd1A8RjMXixzFsASBtu"))
 
 
 
