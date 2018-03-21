@@ -122,17 +122,19 @@ spam_str = ""
 while len(spam_str) < 150:
     spam_str += "test"
 print(spam_str)
-for i in range(10):
-    while True:
-        try:
-            interpret.update_account(str(i),"anarchyhasnogods","space-pictures",[["vote",spam_str]],"5KQg9ZiMdNWpiBrrUdhdhmsox4d4BkwPBd1A8RjMXixzFsASBtu")
-            break
-        except:
-            pass
+for ii in range(15):
+    for i in range(1):
+        while True:
+            try:
+                print("START UPDATE")
+                print("Account update")
+                break
+            except Exception as e:
+                print(e)
+                print("EXCEPTION")
+                pass
 
 
-
-    #print(interpret.start_account(str(i),"5KQg9ZiMdNWpiBrrUdhdhmsox4d4BkwPBd1A8RjMXixzFsASBtu"))
 
 
 
