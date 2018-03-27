@@ -7,11 +7,12 @@ import math
 
 from memo_saving import interpret
 from memo_saving import main
+import json
 
 class Post_holder:
 
 
-    def __init__(self, max_posts, max_time, sending_account, key, memo_account):
+    def __init__(self, max_posts, max_time, sending_account, key, memo_account,nodes):
         # Max time is seconds
         self.max_posts = max_posts
         self.max_time = max_time
@@ -21,19 +22,17 @@ class Post_holder:
         self.key = key
         self.memo_account = memo_account
         self.votes_finished = False
+        self.nodes = nodes
 
     def add_post(self, post_link, submission_author, post_author):
-        print(post_link, submission_author, post_author)
         # post_list = [[postname, submission author, vote list, advertisement_total]]
 
         # gets account info for reward calculation
-        account_info_post = json.dumps(interpret.get_account_info(post_author)[2]) # Gets info on post author
-        ad_tokens = int(account_info_post["ad-token-perm"]) + int(account_info_post["ad-token-temp"])
-
+        account_info_post = interpret.get_account_info(post_author)[2] # Gets info on post author
+        ad_tokens = int(account_info_post["ad-token-perm"])  # + int(account_info_post["ad-token-temp"])
 
         # uses add tokens to calculate visibility within system, and save information needed for later.
-        self.post_list.append([post_link, submission_author, [], 10 + int(math.sqrt(ad_tokens)), time.time()])
-
+        self.post_list.append([post_link, submission_author, [], 10 + int(math.sqrt(ad_tokens)), time.time(), post_author])
 
 
 
@@ -42,10 +41,10 @@ class Post_holder:
         # vote is either -1, 0 or +1
         # -1 = plag, 0 = ignore, +1 = vote for
         # goes through every post and checks if it is the correct one, then every voter to see if it has been voted on already
-
+        print(vote,post)
         already_voted = False
         for i in self.post_list:
-            if post == i[0]:
+            if post[0] == i[0]:
                 for ii in i[2]:
                     if ii[0] == vote[0]:
                         already_voted = True #so that it changes it instead of adding a new vote onto the end
@@ -97,44 +96,40 @@ class Post_holder:
 
             # Make post memo, link to in vote memo
 
-            memo_pos = interpret.vote_post(i[0], i[1], i[4], votes / len(i[2]),  self.memo_account, self.sending_account, self.key)
+            memo_pos = interpret.vote_post(i[0], i[1], i[4],i[2], votes / len(i[2]),  self.memo_account, self.sending_account, self.key,random.choice(self.nodes))
             for ii in i[2]:
-                interpret.update_account(ii[0], self.sending_account,self.memo_account ["vote", str(ii[1]) + "|"
-                                                                                       + str(memo_pos)], self.key)
-
+                #interpret.update_account(ii[0], self.sending_account,self.memo_account )
+                pass
             self.votes_finished = True
 
 
 
 
 
-#interpret.update_account("name","anarchyhasnogods","space-pictures",["add1","add2"])
-#post_thing = Post_holder(100,1000)
-#for i in range(10):
- #   post_thing.add_post(str(i),str(i),"x")
-#print("x")
-while True:
-    #print(1,post_thing.get_random())
-    #print(2,post_thing.random_posts)
-    break
-print("here")
-spam_str = ""
-while len(spam_str) < 150:
-    spam_str += "test"
-print(spam_str)
-for ii in range(15):
-    for i in range(1):
-        while True:
-            try:
-                print("START UPDATE")
-                print("Account update")
-                break
-            except Exception as e:
-                print(e)
-                print("EXCEPTION")
-                pass
+post_holder = Post_holder(100,1000000,"anarchyhasnogods","KEY","space-pictures",["wss://rpc.buildteam.io"])
+for i in range(5):
+    post_holder.add_post("post-link"+str(i), "0","1")
+
+print(post_holder.post_list)
+
+post_list = []
+
+for i in range(250):
+
+    post_list.append(post_holder.get_random())
+    pass
+
+
+# is [0]
+for i in range(len(post_list)):
+    print(i)
+    post_holder.add_vote(["account" + str(i),random.randrange(3)-1],post_list[i])
 
 
 
 
+
+print(post_holder.post_list)
+
+post_holder.finish_post_set()
 
