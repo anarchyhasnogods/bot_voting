@@ -12,7 +12,7 @@ import json
 class Post_holder:
     def __init__(self, max_posts, max_time, sending_account, key, memo_account,nodes,posting_key, vote_threshold):
         self.vote_threshold = vote_threshold # min vote ratio for a vote
-        self.average_post = interpret.get_vote_amount()
+        self.average_post = interpret.get_vote_amount(86400)
 
         print("VOTE AMOUNT")
         print(self.average_post)
@@ -37,8 +37,15 @@ class Post_holder:
         # post_list = [[postname, submission author, vote list, advertisement_total]]
 
         # gets account info for reward calculation
-        account_info_post = interpret.get_account_info(post_author)[2] # Gets info on post author
-        ad_tokens = int(account_info_post["ad-token-perm"])  # + int(account_info_post["ad-token-temp"])
+        account_info_post = interpret.get_account_info(post_author)
+        if account_info_post != None:
+            account_info_post = account_info_post[2]
+            ad_tokens = int(account_info_post["ad-token-perm"])  # + int(account_info_post["ad-token-temp"])
+        else:
+            ad_tokens = 0
+        # Gets info on post author
+
+
         self.account_info[post_link] = account_info_post
         # uses add tokens to calculate visibility within system, and save information needed for later.
         self.post_list.append([post_link, submission_author, [], 10 + int(math.sqrt(ad_tokens)), time.time(), post_author])
@@ -50,7 +57,7 @@ class Post_holder:
         # vote is either -1, 0 or +1
         # -1 = plag, 0 = ignore, +1 = vote for
         # goes through every post and checks if it is the correct one, then every voter to see if it has been voted on already
-        print(vote,post)
+        #print(vote,post)
         already_voted = False
         for i in self.post_list:
             if post[0] == i[0]:
@@ -91,60 +98,90 @@ class Post_holder:
     def finish_post_set(self):
         account_update_list = [] # calculates the total votes of each post
         for i in self.post_list:
-            votes = 0
-            for vote in i[2]:
-                if vote[1] == 1:
-                    in_list = False
-                    for ii in account_update_list:
-                        if ii[0] == vote[0]:
-                            in_list = True
-                            ii[1].append(i[0])
-                            break
+            already_vote = False
+            for ii in self.nodes:
 
-                    votes += 1
+                s = Steem(node=ii)
+
+                search_id =  i[0]
+                print(search_id)
+                search_id = search_id.split("/")
+                print("HERE")
+                print(search_id)
+                search_id2 = search_id[0].split("@", 1)
+                vote_list = s.get_active_votes(search_id2[1], search_id[1])
+
+                for iii in vote_list:
+
+                    if iii["voter"] == self.sending_account:
+                        already_vote = True
+                        print("ALREADY VOTED")
+                        break
+            if not already_vote:
+
+                votes = 0
+                for vote in i[2]:
+                    if vote[1] == 1:
+                        in_list = False
+                        for ii in account_update_list:
+                            if ii[0] == vote[0]:
+                                in_list = True
+                                ii[1].append(i[0])
+                                break
+
+                        votes += 1
 
             # Make post memo, link to in vote memo
-            ratio = votes/len(i[2])
-            vote_size = self.make_vote(ratio,i[0])
-            memo_pos = interpret.vote_post(i[0], i[1], i[4],i[2], votes / len(i[2]),  self.memo_account, self.sending_account, self.key,random.choice(self.nodes), vote_size)
-            for ii in i[2]:
-                #interpret.update_account(ii[0], self.sending_account,self.memo_account )
-                pass
-            self.votes_finished = True
-#--------------------------------------
-# FINISH
+                ratio = votes/len(i[2])
+                vote_size = self.make_vote(ratio,i[0])
+                memo_pos = interpret.vote_post(i[0], i[1], i[4],i[2], votes / len(i[2]),  self.memo_account, self.sending_account, self.key,random.choice(self.nodes), vote_size)
+                for ii in i[2]:
+
+                    pass
+                self.votes_finished = True
+
 
     def make_vote(self, ratio, post_link):
         if ratio < self.vote_threshold:
             return 0
-        upvote_tokens = self.account_info[post_link]["token-upvote-perm"] + self.account_info[post_link]["token-upvote-temp"]
+        if self.account_info[post_link] != None:
+            upvote_tokens = self.account_info[post_link]["token-upvote-perm"] #+ self.account_info[post_link]["token-upvote-temp"]
+        else:
+            upvote_tokens = 0
         print("UPVOTE TOKENS", upvote_tokens)
 
         equation = self.average_post[0] * (math.sqrt(upvote_tokens)/25 + 1) * (ratio/self.average_post[1])
         if equation > 100:
             equation = 100
-
-        for i in nodes:
+        elif equation < 0.1:
+            return 0
+        for i in self.nodes:
             try:
                 steem = Steem(node=i, keys=self.posting_key)
-                steem.vote(post_list, equation, account=self.sending_account)
+                print()
+                steem.vote(post_link, equation, account=self.sending_account)
                 return equation
-            
 
-            except:
+
+            except Exception as e:
+                print("exception")
+                print(e)
                 pass
         return 0
 #----------------------------------------
 
-post_holder = Post_holder(100,1000000,"anarchyhasnogods","KEY","space-pictures",["wss://rpc.buildteam.io"],"posting_key", 0.5)
-for i in range(5):
-    post_holder.add_post("post-link"+str(i), "0","1")
+post_holder = Post_holder(100,1000000,"anarchyhasnogods","activekey","space-pictures",["wss://rpc.buildteam.io"],"postingkey", 0.5)
+# ["post-link", "author","submitor acc]
+post_list = [["@space-pictures/testpost","0","space-pictures"],]
+
+for i in post_list:
+    post_holder.add_post(i[0], i[1],i[2])
 
 print(post_holder.post_list)
 
 post_list = []
 
-for i in range(250):
+for i in range(10):
 
     post_list.append(post_holder.get_random())
     pass
@@ -152,8 +189,8 @@ for i in range(250):
 
 # is [0]
 for i in range(len(post_list)):
-    print(i)
-    post_holder.add_vote(["account" + str(i),random.randrange(3)-1],post_list[i])
+    #print(i)
+    post_holder.add_vote(["account" + str(i),1],post_list[i])
 
 
 
