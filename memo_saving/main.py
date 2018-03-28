@@ -78,24 +78,21 @@ def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", positi
                             has_keyword = False
                             # print(new_memo)
                             #print(new_memo[i[0]], "This")
-                            print(keyword,ii,new_memo)
                             if new_memo[ii[0]] == ii[1]:
-                                print("MEMO KEYYYYYYYYYYYYYYYYYYYYYYYYY")
                                 has_keyword = True
                             if not has_keyword:
-                       #         print("this_pos")
                                 break
-                        #print("her")
+
                     except Exception as e:
-                        #print(e)
+                        print(e)
                         pass
 
                 if has_keyword and has_account:
-              #      print("THIS", i)
-                    memo_list.append(memos[i])
-               #     print(memo_list)
 
-            #print("here")
+                    memo_list.append(memos[i])
+
+
+
 
             if position == step+1 or has_min_block or (recent <= len(memo_list) and not_all_accounts):
                 # ends if it has gone through all the memos, reached the min block, or has too many memos
@@ -109,9 +106,6 @@ def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", positi
 
                 position -=step
 
-        #print(memo_list)
-        print("HEREEE")
-        print(memo_list)
         return memo_list
     # This checks if it has the keyword or is by the account
 
@@ -121,37 +115,54 @@ def save_memo(information, to, account_from, active_key, transaction_size=0.001,
     # This should send a memo and return the position
 
     print("AAAAAAAAaa",information)
+    try:
+        if information["account"] != to:
+            while True:
+                try:
+                    print("here")
+                    save_memo(information,information["account"],account_from,active_key,node)
+                    break
+                except:
+                    try_num += 1
+                    if try_num >3:
+                        break
+
+    except KeyError:
+        pass
     index = None
     try:
         node_connection = create_connection(node)
         s = Steem(node=node_connection, keys=active_key)
-        s.transfer(to,transaction_size,asset=asset,account=account_from, memo=json.dumps(information))
+        print(to,transaction_size,asset)
+        print(account_from)
+        print(information["ratio"])
+        memo = json.dumps(information)
+        print("MEMO THINF MADE")
+        s.transfer(to,transaction_size,asset=asset,account=account_from, memo=memo)
+
         try_thing[0] = 0
     except Exception as e:
         print(e)
+        print(try_thing)
         if try_thing[0] > 5:
             try_thing[0] = 0
             return False
-        return save_memo(information,to,account_from,active_key,transaction_size,asset,node, try_thing[0] +1)
+        return save_memo(information, to, account_from,active_key,transaction_size,asset,node, [try_thing[0] +1,try_thing[1]])
     time.sleep(3)
     while index == None or index == []:
-        print("THIS")
         try:
-            print("THISSS")
-            print(information)
-            print(information["type"])
+
             if information["type"] == "account":
                 index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=[["account",str(information["account"])], ["type","account"]])
             elif information["type"] == "post":
-                index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=[["post_link",information["post_link"]]])
+                index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=[["type","post"],["post_link",information["post_link"]]])
+                print("index")
             elif information["type"] == "vote-link":
 
-                print("Thisone")
-                print(account_from,to,information["account"])
+
 
                 index = retrieve(account=account_from, sent_to=to, recent=1, step=50, keyword=[["type","vote-link"],["account",information["account"]]])
 
-                print("index try")
 
 
         except Exception as e:
@@ -166,8 +177,6 @@ def save_memo(information, to, account_from, active_key, transaction_size=0.001,
 
 
 
-    print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-    print(index)
     return index[0][0]
 
 

@@ -34,10 +34,10 @@ def start_account(account_name,active_key, our_memo_account="space-pictures", ou
 
 
 
-def get_account_info(account,our_account = "anarchyhasnogods", our_memo_account = "space-pictures"):
+def get_account_info(account,our_account = "anarchyhasnogods", our_memo_account = "space-pictures",node ="wss://steemd-int.steemit.com"):
     # gets the useful account info for a specific account
     print("getting account info")
-    return_info = main.retrieve([["account",account],["type","account"]], account=our_account, sent_to=our_memo_account)
+    return_info = main.retrieve([["account",account],["type","account"]], account=our_account, sent_to=our_memo_account,node=node)
 
     if return_info != []:
 
@@ -100,15 +100,16 @@ def list_to_full_string(list_set,our_memo_account, our_sending_account, active_k
 
 
 
-def vote_post(post_link, submission_author, submission_time,vote_list, ratio, our_memo_account, our_sending_account, active_key,node):
+def vote_post(post_link, submission_author, submission_time,vote_list, ratio, our_memo_account, our_sending_account, active_key,node, vote_size):
     # creates basic account memo
     json_thing = {}
     json_thing["type"] = "post"
     json_thing["post_link"] = post_link
     json_thing["submission_author"] = submission_author
-    json_thing["time"] = str(submission_time)
-    json_thing["ratio"] = str(ratio)
+    json_thing["time"] = submission_time
+    json_thing["ratio"] = ratio
     json_thing["vote-list"] = vote_list
+    json_thing["vote_size"] = vote_size
     #print(json_thing)
 
     return main.save_memo(json_thing,our_memo_account, our_sending_account, active_key,node=node)
@@ -156,6 +157,27 @@ def get_vote_list(memo_account, sending_account, post_link, node):
 
 
     return return_info
+
+
+def get_vote_amount(time_period,our_account = "anarchyhasnogods", our_memo_account = "space-pictures",node = "wss://steemd-int.steemit.com"):
+    # time period is seconds
+
+    block = time_period / 3
+    return_info = main.retrieve([["type","post"]], account=our_account, sent_to=our_memo_account,node=node,minblock = block)
+    vote_power_in_period = (1000 / (24 * 60 * 60)) * time_period
+    average_ratio = 0
+    for i in return_info:
+        average_ratio += i[2]["ratio"]
+
+
+    print("RETURN INFO")
+    print("RETURN INFO LENGTH")
+    if len(return_info) == 0:
+        return vote_power_in_period
+
+
+    return [vote_power_in_period / len(return_info), average_ratio/len(return_info)]
+
 
 
 
