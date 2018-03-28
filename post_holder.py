@@ -10,9 +10,15 @@ from memo_saving import main
 import json
 
 class Post_holder:
+    def __init__(self, max_posts, max_time, sending_account, key, memo_account,nodes,posting_key, vote_threshold):
+        self.vote_threshold = vote_threshold # min vote ratio for a vote
+        self.average_post = interpret.get_vote_amount()
 
-
-    def __init__(self, max_posts, max_time, sending_account, key, memo_account,nodes):
+        print("VOTE AMOUNT")
+        print(self.average_post)
+        self.posting_key = posting_key
+        # [average post, time period]
+        # for average vote calculation, uses average of 10 full 100 % votes(1000) and devides it by average (voted on) posts
         # Max time is seconds
         self.max_posts = max_posts
         self.max_time = max_time
@@ -23,6 +29,9 @@ class Post_holder:
         self.memo_account = memo_account
         self.votes_finished = False
         self.nodes = nodes
+        self.account_info = {}
+        self.ratio_num = 0.75
+
 
     def add_post(self, post_link, submission_author, post_author):
         # post_list = [[postname, submission author, vote list, advertisement_total]]
@@ -30,7 +39,7 @@ class Post_holder:
         # gets account info for reward calculation
         account_info_post = interpret.get_account_info(post_author)[2] # Gets info on post author
         ad_tokens = int(account_info_post["ad-token-perm"])  # + int(account_info_post["ad-token-temp"])
-
+        self.account_info[post_link] = account_info_post
         # uses add tokens to calculate visibility within system, and save information needed for later.
         self.post_list.append([post_link, submission_author, [], 10 + int(math.sqrt(ad_tokens)), time.time(), post_author])
 
@@ -95,18 +104,39 @@ class Post_holder:
                     votes += 1
 
             # Make post memo, link to in vote memo
-
-            memo_pos = interpret.vote_post(i[0], i[1], i[4],i[2], votes / len(i[2]),  self.memo_account, self.sending_account, self.key,random.choice(self.nodes))
+            ratio = votes/len(i[2])
+            vote_size = self.make_vote(ratio,i[0])
+            memo_pos = interpret.vote_post(i[0], i[1], i[4],i[2], votes / len(i[2]),  self.memo_account, self.sending_account, self.key,random.choice(self.nodes), vote_size)
             for ii in i[2]:
                 #interpret.update_account(ii[0], self.sending_account,self.memo_account )
                 pass
             self.votes_finished = True
+#--------------------------------------
+# FINISH
 
+    def make_vote(self, ratio, post_link):
+        if ratio < self.vote_threshold:
+            return 0
+        upvote_tokens = self.account_info[post_link]["token-upvote-perm"] + self.account_info[post_link]["token-upvote-temp"]
+        print("UPVOTE TOKENS", upvote_tokens)
 
+        equation = self.average_post[0] * (math.sqrt(upvote_tokens)/25 + 1) * (ratio/self.average_post[1])
+        if equation > 100:
+            equation = 100
 
+        for i in nodes:
+            try:
+                steem = Steem(node=i, keys=self.posting_key)
+                steem.vote(post_list, equation, account=self.sending_account)
+                return equation
+            
 
+            except:
+                pass
+        return 0
+#----------------------------------------
 
-post_holder = Post_holder(100,1000000,"anarchyhasnogods","KEY","space-pictures",["wss://rpc.buildteam.io"])
+post_holder = Post_holder(100,1000000,"anarchyhasnogods","KEY","space-pictures",["wss://rpc.buildteam.io"],"posting_key", 0.5)
 for i in range(5):
     post_holder.add_post("post-link"+str(i), "0","1")
 
