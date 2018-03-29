@@ -136,8 +136,16 @@ class Post_holder:
                 vote_size = self.make_vote(ratio,i[0])
                 memo_pos = interpret.vote_post(i[0], i[1], i[4],i[2], votes / len(i[2]),  self.memo_account, self.sending_account, self.key,random.choice(self.nodes), vote_size)
                 for ii in i[2]:
+                    for iii in self.nodes:
+                        try:
+                            interpret.update_account(ii[0], self.sending_account, self.memo_account, [["vote",[memo_pos,self.memo_account]]],self.key,iii)
+                            break
+                        except Exception as e:
+                            print(e)
+                            print("here")
 
-                    pass
+                            pass
+
                 self.votes_finished = True
 
 
@@ -170,9 +178,9 @@ class Post_holder:
         return 0
 #----------------------------------------
 
-post_holder = Post_holder(100,1000000,"anarchyhasnogods","activekey","space-pictures",["wss://rpc.buildteam.io"],"postingkey", 0.5)
+post_holder = Post_holder(100,1000000,"anarchyhasnogods","active_key","space-pictures",["wss://rpc.buildteam.io"],"posting key", 0.5)
 # ["post-link", "author","submitor acc]
-post_list = [["@space-pictures/testpost","0","space-pictures"],]
+post_list = [["@comedy-central/check-this","0","comedy-central"]]
 
 for i in post_list:
     post_holder.add_post(i[0], i[1],i[2])
@@ -190,7 +198,7 @@ for i in range(10):
 # is [0]
 for i in range(len(post_list)):
     #print(i)
-    post_holder.add_vote(["account" + str(i),1],post_list[i])
+    post_holder.add_vote([str(i % 10) ,1],post_list[i])
 
 
 

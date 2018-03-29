@@ -48,7 +48,7 @@ def get_account_info(account,our_account = "anarchyhasnogods", our_memo_account 
 
 
 
-def update_account(account, our_sending_account, our_memo_account, changes, active_key):
+def update_account(account, our_sending_account, our_memo_account, changes, active_key,node):
     # Changes is composed of a list of changes
     #Each seperate change is [keyword,new_information]
     info = get_account_info(account,our_sending_account, our_memo_account)
@@ -69,7 +69,8 @@ def update_account(account, our_sending_account, our_memo_account, changes, acti
     print("AT THING")
     thing = list_to_full_string(info_dict,our_memo_account,our_sending_account,active_key)
     print("THING MADE")
-    return main.save_memo(thing, our_memo_account, our_sending_account, active_key)
+    print(our_memo_account, our_sending_account, active_key, node)
+    return main.save_memo(thing, our_memo_account, our_sending_account, active_key,node=node)
 
 
 
@@ -163,20 +164,32 @@ def get_vote_amount(time_period,our_account = "anarchyhasnogods", our_memo_accou
     # time period is seconds
 
     block = time_period / 3
-    return_info = main.retrieve([["type","post"]], account=our_account, sent_to=our_memo_account,node=node,minblock = block)
+    return_info = main.retrieve([["type","post"]], account=our_account, sent_to=our_memo_account,node=node,minblock = block,not_all_accounts = False)
     vote_power_in_period = (1000 / (24 * 60 * 60)) * time_period
-    average_ratio = 0
+    average_ratio = [0,0]
+
     for i in return_info:
-        average_ratio += i[2]["ratio"]
+        try:
+            if float(json.loads(i[2])["vote_size"] != 0):
+                average_ratio[0] += float(json.loads(i[2])["ratio"])
+                average_ratio[1] +=1
+
+        except KeyError:
+            pass
+    if average_ratio[1] !=0:
 
 
+        average_ratio = average_ratio[0]/average_ratio[1]
+    else:
+        return [vote_power_in_period,1]
     print("RETURN INFO")
-    print("RETURN INFO LENGTH")
+    print("RETURN INFO LENGTH: ", average_ratio, len(return_info))
+    print(vote_power_in_period)
     if len(return_info) == 0:
-        return vote_power_in_period
+        return [vote_power_in_period,1]
 
 
-    return [vote_power_in_period / len(return_info), average_ratio/len(return_info)]
+    return [vote_power_in_period / len(return_info), average_ratio]
 
 
 

@@ -84,7 +84,7 @@ def retrieve(keyword=[], account="anarchyhasnogods",sent_to="randowhale", positi
                                 break
 
                     except Exception as e:
-                        print(e)
+                        #print(e)
                         pass
 
                 if has_keyword and has_account:
@@ -118,9 +118,16 @@ def save_memo(information, to, account_from, active_key, transaction_size=0.001,
     try:
         if information["account"] != to:
             while True:
+                print("THIS")
                 try:
-                    print("here")
-                    save_memo(information,information["account"],account_from,active_key,node)
+
+                    print("here1")
+                    s = Steem(node=node)
+                    thing = s.get_account(information["account"])
+                    print(thing)
+                    print("here2")
+                    break
+                    save_memo(information,information["account"],account_from,active_key,node=node)
                     break
                 except:
                     try_num += 1
@@ -129,24 +136,29 @@ def save_memo(information, to, account_from, active_key, transaction_size=0.001,
 
     except KeyError:
         pass
+    print("HERE")
     index = None
     try:
+        print(0)
         node_connection = create_connection(node)
+        print(1)
         s = Steem(node=node_connection, keys=active_key)
-        print(to,transaction_size,asset)
-        print(account_from)
-        print(information["ratio"])
+
         memo = json.dumps(information)
         print("MEMO THINF MADE")
+        print(to, transaction_size, asset, account_from, memo)
         s.transfer(to,transaction_size,asset=asset,account=account_from, memo=memo)
-
+        print(2)
         try_thing[0] = 0
     except Exception as e:
+        print(to, transaction_size, asset, account_from, memo)
+        print(6)
         print(e)
         print(try_thing)
         if try_thing[0] > 5:
             try_thing[0] = 0
             return False
+        print(1222)
         return save_memo(information, to, account_from,active_key,transaction_size,asset,node, [try_thing[0] +1,try_thing[1]])
     time.sleep(3)
     while index == None or index == []:
